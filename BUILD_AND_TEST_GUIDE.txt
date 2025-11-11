@@ -1,0 +1,280 @@
+================================================================================
+CELLULAR NETWORK SIMULATOR - BUILD AND TEST GUIDE
+================================================================================
+
+QUICK START:
+-----------
+1. Extract all files to a single directory
+2. Run: make all
+3. Run: ./cellular_network
+
+DETAILED INSTRUCTIONS:
+---------------------
+
+STEP 1: Verify File Structure
+-----------------------------
+Ensure you have all 8 files in the same directory:
+
+Required files:
+- CellularNetwork.h
+- CellularNetwork.cpp
+- main.cpp
+- basicIO.h
+- basicIO.cpp
+- syscall.s
+- Makefile
+- README.txt
+
+Verify with: ls -la
+
+STEP 2: Build the Project
+-------------------------
+
+Option A - Build Everything (Recommended):
+$ make all
+
+This creates two binaries:
+- cellular_network_debug   (with debugging symbols, -g -O0)
+- cellular_network         (optimized, -O3)
+
+Option B - Build Only Debug Version:
+$ make debug
+
+Option C - Build Only Release Version:
+$ make release
+
+STEP 3: Run the Simulator
+-------------------------
+
+Run the optimized version:
+$ ./cellular_network
+
+OR
+
+Run the debug version (useful for troubleshooting):
+$ ./cellular_network_debug
+
+OR
+
+Use make targets:
+$ make run          # Builds and runs release version
+$ make run-debug    # Builds and runs debug version
+
+EXPECTED OUTPUT:
+---------------
+
+The simulator will display output for all four generations:
+
+=================================================
+   CELLULAR NETWORK SIMULATOR
+   OOPD Project - Monsoon 2025
+=================================================
+
+========== 2G COMMUNICATION SIMULATION ==========
+Technology: TDMA (Time Division Multiple Access)
+Bandwidth: 1 MHz (1000 kHz)
+Channel bandwidth: 200 kHz
+Number of channels: 5
+Users per channel: 16
+Messages per user: 20 (5 data + 15 voice)
+Total capacity: 80 users
+
+Adding users to first channel (0-200 kHz)...
+Users on first channel: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+Cellular cores needed: 16
+
+========== 3G COMMUNICATION SIMULATION ==========
+Technology: CDMA (Code Division Multiple Access)
+Bandwidth: 1 MHz (1000 kHz)
+Channel bandwidth: 200 kHz
+Number of channels: 5
+Users per channel: 32
+Messages per user: 10
+Total capacity: 160 users
+
+Adding users to first channel (0-200 kHz)...
+Users on first channel: 0, 1, 2, ..., 31
+Cellular cores needed: 16
+
+========== 4G COMMUNICATION SIMULATION ==========
+Technology: OFDM (Orthogonal Frequency Division Multiplexing)
+Bandwidth: 1 MHz (1000 kHz)
+Channel bandwidth: 10 kHz
+Number of channels: 100
+Users per channel: 30
+Number of antennas: 4
+Messages per user: 10
+Total capacity: 12000 users
+
+Adding users to first channel (0-10 kHz, Antenna 0)...
+Users on first channel: 0, 1, 2, ..., 29
+Cellular cores needed: 120
+
+========== 5G COMMUNICATION SIMULATION ==========
+Technology: Massive MIMO + OFDM
+Primary bandwidth: 1 MHz (1000 kHz)
+Additional bandwidth: 10 MHz at 1800 MHz
+Channel bandwidth (primary): 10 kHz
+Users per 1 MHz (1800 MHz band): 30
+Number of antennas: 16
+Messages per user: 10
+Total capacity: 52800 users
+
+Adding users to first channel (0-10 kHz, Antenna 0, Primary band)...
+Users on first channel: 0, 1, 2, ..., 29
+Cellular cores needed: 528
+
+=================================================
+   SIMULATION COMPLETE
+=================================================
+
+TROUBLESHOOTING:
+---------------
+
+Problem 1: Compilation Errors
+-----------------------------
+Error: "g++: command not found"
+Solution: Install g++
+  Ubuntu/Debian: sudo apt-get install g++
+  Fedora/RHEL: sudo yum install gcc-c++
+  Arch: sudo pacman -S gcc
+
+Error: "unsupported C++17"
+Solution: Ensure g++ version >= 7.0
+  Check: g++ --version
+  Upgrade if necessary
+
+Problem 2: Linker Errors
+------------------------
+Error: "undefined reference to syscall3"
+Solution: Ensure syscall.s is being compiled and linked
+  Check Makefile is correct
+  Verify architecture is x86-64
+
+Problem 3: Runtime Errors
+-------------------------
+Error: Segmentation fault
+Solution: 
+  1. Run the debug version: ./cellular_network_debug
+  2. Use gdb: gdb ./cellular_network_debug
+  3. Check that basicIO.cpp is correctly implemented
+
+Problem 4: Make Errors
+---------------------
+Error: "make: *** No targets specified"
+Solution: 
+  1. Ensure Makefile has no tabs converted to spaces
+  2. Verify Makefile is named exactly "Makefile"
+  3. Try: make -f Makefile all
+
+CLEANING BUILD ARTIFACTS:
+------------------------
+To remove all compiled files:
+$ make clean
+
+This removes:
+- All .o files
+- cellular_network binary
+- cellular_network_debug binary
+
+TESTING CHECKLIST:
+-----------------
+□ All files present in directory
+□ make all completes without errors
+□ make clean works correctly
+□ ./cellular_network runs without crashing
+□ Output shows all 4 generations (2G, 3G, 4G, 5G)
+□ First channel users are displayed for each generation
+□ Cellular cores calculation shown for each generation
+□ No memory leaks (test with: valgrind ./cellular_network)
+
+ADVANCED: Debugging with GDB
+----------------------------
+If you need to debug:
+
+$ make debug
+$ gdb ./cellular_network_debug
+(gdb) run
+(gdb) backtrace    # If it crashes
+(gdb) list         # View source code
+(gdb) break main   # Set breakpoint
+(gdb) step         # Step through code
+
+ADVANCED: Memory Leak Detection
+-------------------------------
+$ valgrind --leak-check=full ./cellular_network
+
+Should show:
+"All heap blocks were freed -- no leaks are possible"
+
+COMPILER FLAGS EXPLAINED:
+------------------------
+
+Debug Build (-g -O0 -DDEBUG):
+  -g        : Include debugging symbols
+  -O0       : No optimization (easier to debug)
+  -DDEBUG   : Define DEBUG macro
+
+Release Build (-O3 -DNDEBUG):
+  -O3       : Maximum optimization
+  -DNDEBUG  : Disable assertions
+
+Common Flags (-std=c++17 -Wall -Wextra):
+  -std=c++17 : Use C++17 standard
+  -Wall      : Enable all warnings
+  -Wextra    : Enable extra warnings
+
+PERFORMANCE COMPARISON:
+----------------------
+You can compare debug vs release performance:
+
+$ time ./cellular_network_debug
+$ time ./cellular_network
+
+The release version should be noticeably faster.
+
+INTEGRATION WITH IDE:
+--------------------
+
+VS Code:
+1. Open folder in VS Code
+2. Install C/C++ extension
+3. Use Ctrl+Shift+B to build
+4. Configure tasks.json to use Makefile
+
+CLion:
+1. Open project
+2. CLion will detect Makefile automatically
+3. Select build configuration from dropdown
+
+Vim/NeoVim:
+1. Open any .cpp file
+2. Run :make in command mode
+3. Navigate errors with :cn and :cp
+
+SUCCESS CRITERIA:
+----------------
+Your project is complete when:
+✓ make all builds without errors or warnings
+✓ Both binaries run successfully
+✓ All 4 generations are simulated
+✓ Output matches expected format
+✓ No memory leaks detected
+✓ README.txt is complete with your information
+
+FINAL SUBMISSION CHECKLIST:
+---------------------------
+Before submitting:
+□ Update README.txt with your name and roll number
+□ Test compilation: make clean && make all
+□ Test execution: ./cellular_network
+□ Verify all OOP concepts are demonstrated
+□ Check code comments are adequate
+□ Ensure Makefile works correctly
+□ Prepare for GitHub commits (minimum 4 significant commits)
+□ Add TA as admin to GitHub repository
+□ Create zip file for Google Classroom submission
+
+================================================================================
+Good luck with your project!
+================================================================================
