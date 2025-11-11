@@ -230,10 +230,10 @@ public:
         return numChannels * usersPerChannel * numAntennas;
     }
     
-    // FIXED: Declare but don't implement inline - will be implemented in .cpp
+    // Declare but don't implement inline - will be implemented in .cpp
     virtual int calculateCoresNeeded(int messagesPerUser) const;
     
-    void displayFirstChannelUsers() const;
+    virtual void displayFirstChannelUsers() const;
     void displayTotalCapacity() const;
     void displayCoresNeeded(int messagesPerUser) const;
     
@@ -301,6 +301,9 @@ public:
     void addUser(std::shared_ptr<UserDevice> user) override {
         CellTower::addUser(user);
     }
+    
+    // FIXED: Override to filter by frequency band as well
+    void displayFirstChannelUsers() const override;
 };
 
 // ============================================================================

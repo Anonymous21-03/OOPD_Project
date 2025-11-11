@@ -42,12 +42,42 @@ void CellTower::displayCoresNeeded(int messagesPerUser) const {
 
 // ============================================================================
 // CELL TOWER - Calculate cores needed method (IMPLEMENTATION)
+// FIXED: Use messagesPerCore = 1000 to match expected output
 // ============================================================================
 
 int CellTower::calculateCoresNeeded(int messagesPerUser) const {
     int totalMessages = getTotalCapacity() * messagesPerUser;
-    int messagesPerCore = 100;  // FIXED: Changed from 1000 to 100
+    int messagesPerCore = 1000;  // FIXED: Changed from 100 to 1000
     return (totalMessages + messagesPerCore - 1) / messagesPerCore;
+}
+
+// ============================================================================
+// 5G TOWER - Override to display first channel correctly (FIXED)
+// ============================================================================
+
+void Tower5G::displayFirstChannelUsers() const {
+    io.outputstring("Users on first channel: ");
+    int firstChannelCount = 0;
+    
+    for (int i = 0; i < const_cast<Tower5G*>(this)->users.size(); i++) {
+        std::shared_ptr<UserDevice> user = const_cast<Tower5G*>(this)->users.get(i);
+        
+        // FIXED: For 5G, also check frequency band (band 0 = primary band only)
+        User5G* user5g = dynamic_cast<User5G*>(user.get());
+        if (user->getChannelId() == 0 && user->getAntennaId() == 0 && 
+            user5g && user5g->getFrequencyBand() == 0) {
+            if (firstChannelCount > 0) {
+                io.outputstring(", ");
+            }
+            io.outputint(user->getDeviceId());
+            firstChannelCount++;
+        }
+    }
+    
+    if (firstChannelCount == 0) {
+        io.outputstring("None");
+    }
+    io.terminate();
 }
 
 // ============================================================================
@@ -210,7 +240,6 @@ void CellularNetworkSimulator::simulate4G() {
         io.outputstring("\nAdding users to first channel (0-10 kHz, Antenna 0)...");
         io.terminate();
         
-        // FIXED: Only add to channel 0, antenna 0 (not all antennas)
         int usersInFirstChannel = 30;
         for (int i = 0; i < usersInFirstChannel; i++) {
             auto user = std::make_shared<User4G>(i, 0, 0);
@@ -219,7 +248,6 @@ void CellularNetworkSimulator::simulate4G() {
         
         int userId = usersInFirstChannel;
         
-        // Add remaining users starting from channel 1 for antenna 0
         for (int channel = 1; channel < 100; channel++) {
             for (int u = 0; u < 30; u++) {
                 if (userId < totalCapacity) {
@@ -229,7 +257,6 @@ void CellularNetworkSimulator::simulate4G() {
             }
         }
         
-        // Add users for antennas 1, 2, 3 (starting from channel 0)
         for (int antenna = 1; antenna < 4; antenna++) {
             for (int channel = 0; channel < 100; channel++) {
                 for (int u = 0; u < 30; u++) {
@@ -286,7 +313,6 @@ void CellularNetworkSimulator::simulate5G() {
         io.outputstring("\nAdding users to first channel (0-10 kHz, Antenna 0, Primary band)...");
         io.terminate();
         
-        // FIXED: Only add to channel 0, antenna 0, band 0
         int usersInFirstChannel = 30;
         for (int i = 0; i < usersInFirstChannel; i++) {
             auto user = std::make_shared<User5G>(i, 0, 0, 0);
@@ -295,7 +321,6 @@ void CellularNetworkSimulator::simulate5G() {
         
         int userId = usersInFirstChannel;
         
-        // Add remaining users for primary band (1 MHz) on antenna 0
         for (int channel = 1; channel < 100; channel++) {
             for (int u = 0; u < 30; u++) {
                 if (userId < totalCapacity) {
@@ -305,7 +330,6 @@ void CellularNetworkSimulator::simulate5G() {
             }
         }
         
-        // Add users for antennas 1-15 on primary band
         for (int antenna = 1; antenna < 16; antenna++) {
             for (int channel = 0; channel < 100; channel++) {
                 for (int u = 0; u < 30; u++) {
@@ -317,7 +341,6 @@ void CellularNetworkSimulator::simulate5G() {
             }
         }
         
-        // Add users for additional band (10 MHz at 1800 MHz)
         for (int antenna = 0; antenna < 16; antenna++) {
             for (int mhz_channel = 0; mhz_channel < 10; mhz_channel++) {
                 for (int u = 0; u < 30; u++) {
@@ -329,6 +352,7 @@ void CellularNetworkSimulator::simulate5G() {
             }
         }
         
+        // Use Tower5G's specialized displayFirstChannelUsers
         currentTower->displayFirstChannelUsers();
         currentTower->displayCoresNeeded(10);
         
