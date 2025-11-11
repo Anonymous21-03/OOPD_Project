@@ -1,79 +1,122 @@
-# Makefile for Cellular Network Simulator
+# ============================================================================
+# Makefile - Cellular Network Simulator
 # OOPD Project - Monsoon 2025
+# ============================================================================
+# This Makefile builds both debug and release versions of the simulator
+# ============================================================================
 
+# Compiler and flags
 CXX = g++
-CXXFLAGS_COMMON = -std=c++17 -Wall -Wextra
-CXXFLAGS_DEBUG = $(CXXFLAGS_COMMON) -g -O0 -DDEBUG
-CXXFLAGS_RELEASE = $(CXXFLAGS_COMMON) -O3 -DNDEBUG
-
 AS = as
-ASFLAGS = 
+CXXFLAGS = -std=c++17 -Wall -Wextra
 
-LDFLAGS = 
+# Debug flags
+DEBUG_FLAGS = -g -O0 -DDEBUG
+DEBUG_CXXFLAGS = $(CXXFLAGS) $(DEBUG_FLAGS)
+
+# Release flags (optimized)
+RELEASE_FLAGS = -O3 -DNDEBUG
+RELEASE_CXXFLAGS = $(CXXFLAGS) $(RELEASE_FLAGS)
 
 # Source files
-SOURCES = main.cpp CellularNetwork.cpp basicIO.cpp
-ASM_SOURCES = syscall.s
+SOURCES = main.cpp basicIO.cpp CellularNetwork.cpp
+HEADERS = basicIO.h CellularNetwork.h
+ASMSOURCES = syscall.s
 
-# Object files
-OBJECTS_DEBUG = $(SOURCES:.cpp=_debug.o) $(ASM_SOURCES:.s=_debug.o)
-OBJECTS_RELEASE = $(SOURCES:.cpp=_release.o) $(ASM_SOURCES:.s=_release.o)
+# Object files - separated by build type
+DEBUG_OBJECTS = $(addprefix debug_obj/,$(SOURCES:.cpp=.o)) debug_obj/syscall.o
+RELEASE_OBJECTS = $(addprefix release_obj/,$(SOURCES:.cpp=.o)) release_obj/syscall.o
 
 # Output binaries
-TARGET_DEBUG = cellular_network_debug
-TARGET_RELEASE = cellular_network
+DEBUG_BIN = cellular_network_debug
+RELEASE_BIN = cellular_network
 
 # Default target
 all: debug release
 
-# Debug build
-debug: $(TARGET_DEBUG)
+# ============================================================================
+# DEBUG BUILD TARGETS
+# ============================================================================
 
-$(TARGET_DEBUG): $(OBJECTS_DEBUG)
-	$(CXX) $(CXXFLAGS_DEBUG) -o $@ $^ $(LDFLAGS)
+debug: $(DEBUG_BIN)
 
-%_debug.o: %.cpp
-	$(CXX) $(CXXFLAGS_DEBUG) -c $< -o $@
+$(DEBUG_BIN): $(DEBUG_OBJECTS)
+	@echo "Linking debug version: $(DEBUG_BIN)"
+	@$(CXX) $(DEBUG_CXXFLAGS) -o $@ $^
+	@echo "✓ Debug build complete: ./$(DEBUG_BIN)"
 
-%_debug.o: %.s
-	$(AS) $(ASFLAGS) $< -o $@
+debug_obj/%.o: %.cpp $(HEADERS)
+	@mkdir -p debug_obj
+	@echo "Compiling [DEBUG]: $<"
+	@$(CXX) $(DEBUG_CXXFLAGS) -c $< -o $@
 
-# Release/Optimized build
-release: $(TARGET_RELEASE)
+debug_obj/syscall.o: syscall.s
+	@mkdir -p debug_obj
+	@echo "Assembling [DEBUG]: syscall.s"
+	@$(AS) -o $@ $<
 
-$(TARGET_RELEASE): $(OBJECTS_RELEASE)
-	$(CXX) $(CXXFLAGS_RELEASE) -o $@ $^ $(LDFLAGS)
+# ============================================================================
+# RELEASE BUILD TARGETS
+# ============================================================================
 
-%_release.o: %.cpp
-	$(CXX) $(CXXFLAGS_RELEASE) -c $< -o $@
+release: $(RELEASE_BIN)
 
-%_release.o: %.s
-	$(AS) $(ASFLAGS) $< -o $@
+$(RELEASE_BIN): $(RELEASE_OBJECTS)
+	@echo "Linking release version: $(RELEASE_BIN)"
+	@$(CXX) $(RELEASE_CXXFLAGS) -o $@ $^
+	@echo "✓ Release build complete: ./$(RELEASE_BIN)"
 
-# Clean build artifacts
-clean:
-	rm -f $(OBJECTS_DEBUG) $(OBJECTS_RELEASE) $(TARGET_DEBUG) $(TARGET_RELEASE)
-	rm -f *_debug.o *_release.o
+release_obj/%.o: %.cpp $(HEADERS)
+	@mkdir -p release_obj
+	@echo "Compiling [RELEASE]: $<"
+	@$(CXX) $(RELEASE_CXXFLAGS) -c $< -o $@
 
-# Run debug version
-run-debug: debug
-	./$(TARGET_DEBUG)
+release_obj/syscall.o: syscall.s
+	@mkdir -p release_obj
+	@echo "Assembling [RELEASE]: syscall.s"
+	@$(AS) -o $@ $<
 
-# Run release version
+# ============================================================================
+# UTILITY TARGETS
+# ============================================================================
+
 run: release
-	./$(TARGET_RELEASE)
+	@echo "Running release version..."
+	@./$(RELEASE_BIN)
 
-# Help target
+run-debug: debug
+	@echo "Running debug version..."
+	@./$(DEBUG_BIN)
+
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf debug_obj/ release_obj/
+	@rm -f $(DEBUG_BIN) $(RELEASE_BIN)
+	@echo "✓ Cleanup complete"
+
+rebuild: clean all
+	@echo "✓ Rebuild complete"
+
+.PHONY: all debug release run run-debug clean rebuild
+
+# ============================================================================
+# HELP TARGET
+# ============================================================================
+
 help:
-	@echo "Cellular Network Simulator - Build System"
-	@echo "=========================================="
+	@echo "===== Cellular Network Simulator - Build System ====="
+	@echo ""
 	@echo "Available targets:"
-	@echo "  all         - Build both debug and release versions (default)"
-	@echo "  debug       - Build debug version with symbols"
-	@echo "  release     - Build optimized release version"
-	@echo "  clean       - Remove all build artifacts"
-	@echo "  run-debug   - Build and run debug version"
-	@echo "  run         - Build and run release version"
-	@echo "  help        - Display this help message"
-
-.PHONY: all debug release clean run run-debug help
+	@echo "  make all          - Build both debug and release versions (default)"
+	@echo "  make debug        - Build debug version only"
+	@echo "  make release      - Build release version only"
+	@echo "  make run          - Build and run release version"
+	@echo "  make run-debug    - Build and run debug version"
+	@echo "  make clean        - Remove all build artifacts"
+	@echo "  make rebuild      - Clean and rebuild all"
+	@echo "  make help         - Show this help message"
+	@echo ""
+	@echo "Output binaries:"
+	@echo "  Debug:   ./$(DEBUG_BIN)"
+	@echo "  Release: ./$(RELEASE_BIN)"
+	@echo ""
