@@ -61,7 +61,14 @@ int main() {
 
         while (running) {
             printMenu();
-            int choice = io.inputint();
+            char buf[32];
+	    io.inputstring(buf, 32);
+	    
+	    int choice = atoi(buf);
+
+	    // If atoi gives 0 but input wasn't actually "0", treat as invalid (map to 6)
+	    if (choice == 0 && buf[0] != '0')
+    		choice = 6;
 
             switch (choice) {
                 case 1:
