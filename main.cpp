@@ -1,5 +1,8 @@
 #include "CellularNetwork.h"
 #include "basicIO.h"
+#include <cstdlib>
+
+extern basicIO io;
 
 void printHeader() {
     io.outputstring("=================================================");
@@ -33,11 +36,11 @@ int main() {
             printMenu();
             char buf[32];
             io.inputstring(buf, 32);
-            
+
             int choice = atoi(buf);
 
-            // If atoi gives 0 but input wasn't actually "0", treat as invalid (map to 6)
-            if (choice == 0 && buf[0] != '0')
+            // If atoi gives 0 but input wasn't actually "0", treat as invalid
+            if (choice == 0 && buf[0] != '0' && buf[0] != '\n' && buf[0] != '\0')
                 choice = 6;
 
             switch (choice) {
@@ -54,7 +57,6 @@ int main() {
                     simulator.simulate5G();
                     break;
                 case 5:
-                    // simulate all in sequence
                     simulator.simulate2G();
                     simulator.simulate3G();
                     simulator.simulate4G();

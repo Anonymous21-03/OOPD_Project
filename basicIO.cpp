@@ -123,7 +123,6 @@
 //     }
 // }
 
-
 #include "basicIO.h"
 
 #define SYS_READ 0
@@ -145,6 +144,7 @@ int basicIO::inputint() {
     char buffer[32] = {0};
     long bytes = syscall3(0, 0, (long)buffer, 31);
     if (bytes <= 0) return 0;
+    if (bytes > 30) bytes = 30;
     buffer[bytes] = '\0';
     int result = 0;
     int i = 0;
@@ -208,7 +208,7 @@ void basicIO::outputint(int number) {
 void basicIO::outputstring(const char* text) {
     long len = 0;
     while (text[len]) ++len;
-    syscall3(SYS_WRITE, STDOUT, (long)text, len);
+    if (len > 0) syscall3(SYS_WRITE, STDOUT, (long)text, len);
 }
 
 void basicIO::terminate() {
@@ -219,7 +219,7 @@ void basicIO::terminate() {
 void basicIO::errorstring(const char* text) {
     long len = 0;
     while (text[len]) ++len;
-    syscall3(SYS_WRITE, 2, (long)text, len);
+    if (len > 0) syscall3(SYS_WRITE, 2, (long)text, len);
 }
 
 void basicIO::errorint(int number) {
