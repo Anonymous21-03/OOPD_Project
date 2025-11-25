@@ -1,6 +1,12 @@
+// main.cpp
 #include "CellularNetwork.h"
 #include "basicIO.h"
 #include <cstdlib>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
+#include <iostream>
 
 extern basicIO io;
 
@@ -26,16 +32,44 @@ void printMenu() {
     io.outputstring("Enter choice: ");
 }
 
-int main() {
+// Redirect stdin (fd 0) to the named file.
+// Returns true on success, false on failure (and prints an error message to stderr).
+static bool redirectStdinToFile(const char* path) {
+    if (!path) return false;
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        std::cerr << "Error: cannot open input file \"" << path << "\": " << strerror(errno) << std::endl;
+        return false;
+    }
+    if (dup2(fd, STDIN_FILENO) < 0) {
+        std::cerr << "Error: dup2 failed for \"" << path << "\": " << strerror(errno) << std::endl;
+        close(fd);
+        return false;
+    }
+    close(fd);
+    return true;
+}
+
+int main(int argc, char** argv) {
     try {
+        // If filename provided as first argument, redirect stdin to it.
+        // This makes all existing calls that read from STDIN (via basicIO/syscall) work unchanged.
+        if (argc > 1) {
+            if (!redirectStdinToFile(argv[1])) {
+                std::cerr << "Falling back to interactive stdin is not attempted; exiting." << std::endl;
+                return 1;
+            }
+        }
+
         CellularNetworkSimulator simulator;
         bool running = true;
         printHeader();
 
         while (running) {
             printMenu();
-            char buf[32];
-            io.inputstring(buf, 32);
+            char buf[256];
+            // read menu choice (works from redirected file or terminal)
+            io.inputstring(buf, 256);
 
             int choice = atoi(buf);
 
@@ -57,6 +91,8 @@ int main() {
                     simulator.simulate5G();
                     break;
                 case 5:
+                    // simulate all sequentially (these will consume further lines from the input file
+                    // for any interactive prompts inside each simulation)
                     simulator.simulate2G();
                     simulator.simulate3G();
                     simulator.simulate4G();
@@ -93,4 +129,3 @@ int main() {
         return 1;
     }
 }
-    

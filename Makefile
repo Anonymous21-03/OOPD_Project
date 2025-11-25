@@ -1,5 +1,5 @@
 # ============================================================================
-# Makefile - Cellular Network Simulator
+# Makefile - Cellular Network Simulator (modified to accept FILE=... for run)
 # OOPD Project - Monsoon 2025
 # ============================================================================
 # This Makefile builds both debug and release versions of the simulator
@@ -80,13 +80,15 @@ release_obj/syscall.o: syscall.s
 # UTILITY TARGETS
 # ============================================================================
 
+# You can pass FILE=path/to/input.txt to make run to feed the program input from a file.
+# If FILE is omitted the program will read from interactive stdin as before.
 run: release
 	@echo "Running release version..."
-	@./$(RELEASE_BIN)
+	@./$(RELEASE_BIN) $(FILE)
 
 run-debug: debug
 	@echo "Running debug version..."
-	@./$(DEBUG_BIN)
+	@./$(DEBUG_BIN) $(FILE)
 
 clean:
 	@echo "Cleaning build artifacts..."
@@ -110,8 +112,8 @@ help:
 	@echo "  make all          - Build both debug and release versions (default)"
 	@echo "  make debug        - Build debug version only"
 	@echo "  make release      - Build release version only"
-	@echo "  make run          - Build and run release version"
-	@echo "  make run-debug    - Build and run debug version"
+	@echo "  make run          - Build and run release version (use FILE=... to supply input file)"
+	@echo "  make run-debug    - Build and run debug version (use FILE=... to supply input file)"
 	@echo "  make clean        - Remove all build artifacts"
 	@echo "  make rebuild      - Clean and rebuild all"
 	@echo "  make help         - Show this help message"
