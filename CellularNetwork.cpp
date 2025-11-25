@@ -35,18 +35,25 @@ void CellTower::displayTotalCapacity() const {
     io.terminate();
 }
 
-void CellTower::displayCoresNeeded(int messagesPerUser) const {
+void CellTower::displayCoresNeeded(int messagesPerUser, int overheadPer100Messages) const {
     io.outputstring("Cellular cores needed: ");
-    io.outputint(calculateCoresNeeded(messagesPerUser));
+    io.outputint(calculateCoresNeeded(messagesPerUser, overheadPer100Messages));
     io.terminate();
 }
 
-int CellTower::calculateCoresNeeded(int messagesPerUser) const {
-    // Use a clear constant for messages per core so results are consistent across sims
-    const int messagesPerCore = 1000;
-    long long totalMessages = 1LL * getTotalCapacity() * messagesPerUser;
-    long long cores = (totalMessages + messagesPerCore - 1) / messagesPerCore;
-    return static_cast<int>(cores);
+int CellTower::calculateCoresNeeded(int messagesPerUser, int overheadPer100Messages) const {
+    // Use CellularCore capacity (based on overhead) to compute cores.
+    CellularCore sampleCore(0, overheadPer100Messages);
+    int devicesPerCore = sampleCore.getMaxDevices();
+    if (devicesPerCore <= 0) {
+        // fallback to a safe non-zero
+        devicesPerCore = 1;
+    }
+
+    int totalDevices = getTotalCapacity();
+    // cores needed is how many cores required to support all devices (devices capacity per core)
+    int cores = (totalDevices + devicesPerCore - 1) / devicesPerCore;
+    return cores;
 }
 
 // ============================================================================
@@ -77,7 +84,6 @@ void Tower5G::displayFirstChannelUsers() const {
 // ============================================================================
 // 2G Simulation
 // ============================================================================
-
 void CellularNetworkSimulator::simulate2G() {
     io.outputstring("\n========== 2G COMMUNICATION SIMULATION ==========");
     io.terminate();
@@ -99,7 +105,7 @@ void CellularNetworkSimulator::simulate2G() {
         io.terminate();
         io.outputstring("Users per channel: 16");
         io.terminate();
-        io.outputstring("Messages per user: 20 (5 data + 15 voice)"); // clarify in README if you want data-only or voice-only
+        io.outputstring("Messages per user: 20 (5 data + 15 voice)");
         io.terminate();
 
         currentTower->displayTotalCapacity();
@@ -126,7 +132,16 @@ void CellularNetworkSimulator::simulate2G() {
         }
 
         currentTower->displayFirstChannelUsers();
-        currentTower->displayCoresNeeded(20);
+
+        // prompt for overhead per 100 messages (default 0)
+        io.outputstring("\nEnter overhead per 100 messages (0-100) [default 0]: ");
+        char buf[32] = {0};
+        io.inputstring(buf, 32);
+        int overhead = atoi(buf);
+        if (buf[0] == '\0') overhead = 0;
+        if (overhead < 0) overhead = 0;
+
+        currentTower->displayCoresNeeded(20, overhead);
 
     } catch (const NetworkException& e) {
         io.errorstring("2G Simulation Error: ");
@@ -138,7 +153,6 @@ void CellularNetworkSimulator::simulate2G() {
 // ============================================================================
 // 3G Simulation
 // ============================================================================
-
 void CellularNetworkSimulator::simulate3G() {
     io.outputstring("\n========== 3G COMMUNICATION SIMULATION ==========");
     io.terminate();
@@ -187,7 +201,15 @@ void CellularNetworkSimulator::simulate3G() {
         }
 
         currentTower->displayFirstChannelUsers();
-        currentTower->displayCoresNeeded(10);
+
+        io.outputstring("\nEnter overhead per 100 messages (0-100) [default 0]: ");
+        char buf[32] = {0};
+        io.inputstring(buf, 32);
+        int overhead = atoi(buf);
+        if (buf[0] == '\0') overhead = 0;
+        if (overhead < 0) overhead = 0;
+
+        currentTower->displayCoresNeeded(10, overhead);
 
     } catch (const NetworkException& e) {
         io.errorstring("3G Simulation Error: ");
@@ -199,7 +221,6 @@ void CellularNetworkSimulator::simulate3G() {
 // ============================================================================
 // 4G Simulation
 // ============================================================================
-
 void CellularNetworkSimulator::simulate4G() {
     io.outputstring("\n========== 4G COMMUNICATION SIMULATION ==========");
     io.terminate();
@@ -213,6 +234,7 @@ void CellularNetworkSimulator::simulate4G() {
         char buf[32] = {0};
         io.inputstring(buf, 32);
         int antennas = atoi(buf);
+        if (buf[0] == '\0') antennas = 4;
         if (antennas < 1 || antennas > 4) antennas = 4;
         currentTower->setNumAntennas(antennas);
 
@@ -271,7 +293,15 @@ void CellularNetworkSimulator::simulate4G() {
         }
 
         currentTower->displayFirstChannelUsers();
-        currentTower->displayCoresNeeded(10);
+
+        io.outputstring("\nEnter overhead per 100 messages (0-100) [default 0]: ");
+        char buf2[32] = {0};
+        io.inputstring(buf2, 32);
+        int overhead = atoi(buf2);
+        if (buf2[0] == '\0') overhead = 0;
+        if (overhead < 0) overhead = 0;
+
+        currentTower->displayCoresNeeded(10, overhead);
 
     } catch (const NetworkException& e) {
         io.errorstring("4G Simulation Error: ");
@@ -283,7 +313,6 @@ void CellularNetworkSimulator::simulate4G() {
 // ============================================================================
 // 5G Simulation
 // ============================================================================
-
 void CellularNetworkSimulator::simulate5G() {
     io.outputstring("\n========== 5G COMMUNICATION SIMULATION ==========");
     io.terminate();
@@ -297,6 +326,7 @@ void CellularNetworkSimulator::simulate5G() {
         char buf[32] = {0};
         io.inputstring(buf, 32);
         int antennas = atoi(buf);
+        if (buf[0] == '\0') antennas = 16;
         if (antennas < 1 || antennas > 16) antennas = 16;
         currentTower->setNumAntennas(antennas);
 
@@ -366,7 +396,15 @@ void CellularNetworkSimulator::simulate5G() {
         }
 
         currentTower->displayFirstChannelUsers();
-        currentTower->displayCoresNeeded(10);
+
+        io.outputstring("\nEnter overhead per 100 messages (0-100) [default 0]: ");
+        char buf3[32] = {0};
+        io.inputstring(buf3, 32);
+        int overhead = atoi(buf3);
+        if (buf3[0] == '\0') overhead = 0;
+        if (overhead < 0) overhead = 0;
+
+        currentTower->displayCoresNeeded(10, overhead);
 
     } catch (const NetworkException& e) {
         io.errorstring("5G Simulation Error: ");
@@ -378,7 +416,6 @@ void CellularNetworkSimulator::simulate5G() {
 // ============================================================================
 // runSimulation (used when you want to run all sims sequentially)
 // ============================================================================
-
 void CellularNetworkSimulator::runSimulation() {
     io.outputstring("=================================================");
     io.terminate();

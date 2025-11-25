@@ -10,7 +10,6 @@
 // ============================================================================
 // CUSTOM EXCEPTION CLASSES - Exception Handling Requirement
 // ============================================================================
-
 class NetworkException : public std::exception {
 protected:
     const char* message;
@@ -32,7 +31,6 @@ public:
 // ============================================================================
 // ENUM FOR GENERATION TYPE
 // ============================================================================
-
 enum GenerationType {
     GEN_2G,
     GEN_3G,
@@ -42,9 +40,7 @@ enum GenerationType {
 
 // ============================================================================
 // TEMPLATE CLASS - Template Requirement
-// (Added const overloads and const_iterators so const methods can iterate safely)
 // ============================================================================
-
 template <typename T>
 class NetworkContainer {
 private:
@@ -83,7 +79,6 @@ public:
 // ============================================================================
 // USER DEVICE HIERARCHY - Inheritance & Polymorphism
 // ============================================================================
-
 class UserDevice {
 protected:
     int deviceId;
@@ -117,7 +112,6 @@ public:
     User2G(int id, int channel = 0)
         : UserDevice(id, channel, 0), dataMessages(5), voiceMessages(15) {}
 
-    // NOTE: This returns data+voice; the simulation chooses whether to treat as combined.
     int getMessagesGenerated() const override {
         return dataMessages + voiceMessages;
     }
@@ -171,9 +165,7 @@ public:
 
 // ============================================================================
 // CELLULAR CORE CLASS
-// (Kept lightweight — cores used implicitly by the tower calculation)
 // ============================================================================
-
 class CellularCore {
 private:
     int coreId;
@@ -199,7 +191,6 @@ public:
 // ============================================================================
 // CELL TOWER BASE CLASS
 // ============================================================================
-
 class CellTower {
 protected:
     GenerationType generation;
@@ -234,11 +225,11 @@ public:
         return numChannels * usersPerChannel * numAntennas;
     }
 
-    // core calc and displays - implemented in .cpp
-    virtual int calculateCoresNeeded(int messagesPerUser) const;
+    // core calc and displays - updated to accept overhead parameter
+    virtual int calculateCoresNeeded(int messagesPerUser, int overheadPer100Messages = 0) const;
     virtual void displayFirstChannelUsers() const;
     void displayTotalCapacity() const;
-    void displayCoresNeeded(int messagesPerUser) const;
+    void displayCoresNeeded(int messagesPerUser, int overheadPer100Messages = 0) const;
 
     int getNumUsers() const { return users.size(); }
     GenerationType getGeneration() const { return generation; }
@@ -297,7 +288,6 @@ public:
 // ============================================================================
 // CELLULAR NETWORK SIMULATOR
 // ============================================================================
-
 class CellularNetworkSimulator {
 private:
     std::shared_ptr<CellTower> currentTower;
