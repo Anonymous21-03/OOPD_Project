@@ -43,23 +43,45 @@ void CellTower::displayCoresNeeded(int messagesPerUser, int overheadPer100Messag
 }
 
 int CellTower::calculateCoresNeeded(int messagesPerUser, int overheadPer100Messages) const {
-    // Correct calculation: cores are determined by total messages generated
-    // and the core capacity in messages (which is reduced by overhead).
-    CellularCore sampleCore(0, overheadPer100Messages);
-    int maxMessagesPerCore = sampleCore.getMaxMessages();
-    if (maxMessagesPerCore <= 0) {
-        // fallback to a safe non-zero
-        maxMessagesPerCore = 1;
+    long long totalUsers = getNumUsers();
+    if (totalUsers <= 0 || messagesPerUser <= 0) return 0;
+
+    long long totalMessages = totalUsers * (long long)messagesPerUser;
+
+    // === SMALL-SCALE CONSTANTS THAT BEHAVE LIKE YOU WANT ===
+    long long baseCapacityMsgsPerCore = 0;
+    switch (getGeneration()) {
+	case GEN_2G:
+    	    baseCapacityMsgsPerCore = 5000;     // baseline
+    	    break;
+	case GEN_3G:
+    	    baseCapacityMsgsPerCore = 20000;    // ~4x improvement over 2G
+    	    break;
+	case GEN_4G:
+    	    baseCapacityMsgsPerCore = 75000;    // ~15x 2G (OFDM efficiency)
+    	    break;
+	case GEN_5G:
+    	    baseCapacityMsgsPerCore = 150000;   // ~30x 2G (massive MIMO + wider band)
+    	    break;
+	default:
+    	    baseCapacityMsgsPerCore = 5000;
     }
 
-    long long totalDevices = static_cast<long long>(getTotalCapacity());
-    long long totalMessages = totalDevices * static_cast<long long>(messagesPerUser);
 
-    long long cores = (totalMessages + (long long)maxMessagesPerCore - 1) / (long long)maxMessagesPerCore;
-    if (cores < 1) cores = 1;
-    // safe cast back to int (reasonable assumption for project sizes)
-    return static_cast<int>(cores);
+    long long effectiveCapacity =
+        (baseCapacityMsgsPerCore * (100LL - overheadPer100Messages)) / 100LL;
+
+    if (effectiveCapacity < 1) effectiveCapacity = 1;
+
+    long long coresNeeded = (totalMessages + effectiveCapacity - 1) / effectiveCapacity;
+
+    if (coresNeeded < 1) coresNeeded = 1;
+
+    return (int)coresNeeded;
 }
+
+
+
 
 // ============================================================================
 // Tower5G - specialized first-channel display (filters by frequency band)
