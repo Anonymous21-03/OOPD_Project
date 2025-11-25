@@ -1,3 +1,4 @@
+// CellularNetwork.cpp
 #include "CellularNetwork.h"
 #include "basicIO.h"
 #include <cstdlib>
@@ -42,18 +43,22 @@ void CellTower::displayCoresNeeded(int messagesPerUser, int overheadPer100Messag
 }
 
 int CellTower::calculateCoresNeeded(int messagesPerUser, int overheadPer100Messages) const {
-    // Use CellularCore capacity (based on overhead) to compute cores.
+    // Correct calculation: cores are determined by total messages generated
+    // and the core capacity in messages (which is reduced by overhead).
     CellularCore sampleCore(0, overheadPer100Messages);
-    int devicesPerCore = sampleCore.getMaxDevices();
-    if (devicesPerCore <= 0) {
+    int maxMessagesPerCore = sampleCore.getMaxMessages();
+    if (maxMessagesPerCore <= 0) {
         // fallback to a safe non-zero
-        devicesPerCore = 1;
+        maxMessagesPerCore = 1;
     }
 
-    int totalDevices = getTotalCapacity();
-    // cores needed is how many cores required to support all devices (devices capacity per core)
-    int cores = (totalDevices + devicesPerCore - 1) / devicesPerCore;
-    return cores;
+    long long totalDevices = static_cast<long long>(getTotalCapacity());
+    long long totalMessages = totalDevices * static_cast<long long>(messagesPerUser);
+
+    long long cores = (totalMessages + (long long)maxMessagesPerCore - 1) / (long long)maxMessagesPerCore;
+    if (cores < 1) cores = 1;
+    // safe cast back to int (reasonable assumption for project sizes)
+    return static_cast<int>(cores);
 }
 
 // ============================================================================

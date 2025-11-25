@@ -1,3 +1,4 @@
+// CellularNetwork.h
 #ifndef CELLULAR_NETWORK_H
 #define CELLULAR_NETWORK_H
 
@@ -164,27 +165,32 @@ public:
 };
 
 // ============================================================================
-// CELLULAR CORE CLASS
+// CELLULAR CORE CLASS (capacity represented in MESSAGES per core)
 // ============================================================================
 class CellularCore {
 private:
     int coreId;
     int overheadPer100Messages;
-    int maxDevicesSupported;
+    int maxMessagesSupported; // messages per core (after overhead)
 public:
     CellularCore(int id, int overhead)
-        : coreId(id), overheadPer100Messages(overhead), maxDevicesSupported(0) {
-        calculateMaxDevices();
+        : coreId(id), overheadPer100Messages(overhead), maxMessagesSupported(0) {
+        calculateMaxMessages();
     }
 
-    void calculateMaxDevices() {
-        int baseCapacity = 10000;
+    void calculateMaxMessages() {
+        // base messages capacity a core can handle (interpreted as messages per core)
+        int baseMessagesCapacity = 10000;
         if (overheadPer100Messages < 0) overheadPer100Messages = 0;
-        maxDevicesSupported = baseCapacity * 100 / (100 + overheadPer100Messages);
+        // reduce effective messages the core can handle according to overhead
+        maxMessagesSupported = baseMessagesCapacity * 100 / (100 + overheadPer100Messages);
     }
 
     int getCoreId() const { return coreId; }
-    int getMaxDevices() const { return maxDevicesSupported; }
+
+    // Returns maximum messages a single core can handle (after overhead).
+    int getMaxMessages() const { return maxMessagesSupported; }
+
     int getOverhead() const { return overheadPer100Messages; }
 };
 
